@@ -1,0 +1,164 @@
+#!/usr/bin/lua
+local root=arg[0]:match("^(.*)/[^/]*$")
+package.path=string.format('%s/lib/?.lua', root)
+
+require 'tolua'
+require 'lua_bind'
+
+local function help()
+    print([[
+    usage: tolua++ [options] input_file
+
+    Command line options are:
+    -v       : print version information.
+    -o  file : set output file; default is stdout.
+    -H  file : create include file.
+    -n  name : set package name; default is input file root name.
+    -p       : parse only.
+    -P       : parse and print structure information (for debug).
+    -S       : disable support for c++ strings.
+    -1       : substract 1 to operator[] index (for compatibility with tolua5).
+    -L  file : run lua file (with dofile()) before doing anything.
+    -D       : disable automatic exporting of destructors for classes that have
+    constructors (for compatibility with tolua5)
+    -W       : disable warnings for unsupported features (for compatibility
+    with tolua5)
+    -C       : disable cleanup of included lua code (for easier debugging)
+    -E  value[=value] : add extra values to the luastate
+    -t       : export a list of types asociates with the C++ typeid name
+    -q       : don't print warnings to the console
+    -h       : print this message.
+    Should the input file be omitted, stdin is assumed;
+    in that case, the package name must be explicitly set.\n
+    ]])
+    os.exit(0)
+end
+
+local function version()
+    print(TOLUA_VERSION.." (written by W. Celes, A. Manzur)")
+    os.exit(0)
+end
+
+local function new_iter(t)
+    local i=0
+    return function()
+        i=i+1
+        if i>#t then
+            return
+        end
+        return t[i]
+    end
+end
+
+local function parse_extra(_extra_parameters)
+
+    for k,v in ipairs(_extra_parameters or {}) do
+
+        local b,e,name,value = string.find(v, "^([^=]*)=(.*)$")
+        if b then
+            _extra_parameters[name] = value
+        else
+            _extra_parameters[v] = true
+        end
+    end
+end
+
+function parsearg(arg)
+    if #arg==0 then
+        help()
+    end
+
+    local flags={}
+    local _extra_parameters={}
+    local argMap={
+        ['v']=function(key, iter) version() end,
+        ['h']=function(key, iter) help() end,
+        ['p']=function(key, iter) flags[key]=true end,
+        ['P']=function(key, iter) flags[key]=true end,
+        ['o']=function(key, iter) flags[key]=iter() end,
+        ['n']=function(key, iter) flags[key]=iter() end,
+        ['H']=function(key, iter) flags[key]=iter() end,
+        ['S']=function(key, iter) flags[key]=true end,
+        ['1']=function(key, iter) flags[key]=true end,
+        ['L']=function(key, iter) flags[key]=iter() end,
+        ['D']=function(key, iter) flags[key]=true end,
+        ['W']=function(key, iter) flags[key]=true end,
+        ['C']=function(key, iter) flags[key]=true end,
+        ['E']=function(key, iter) table.insert(_extra_parameters, iter()) end,
+        ['t']=function(key, iter) flags[key]=true end,
+        ['q']=function(key, iter) flags[key]=true end,
+    }
+    local iter=new_iter(arg)
+    while true do
+        local v=iter()
+        if not v then
+            break
+        end
+        if v:sub(1, 1)=='-' then
+            -- options
+            key=v:sub(2, 2)
+            if argMap[key] then
+                argMap[key](key, iter)
+            else
+                print("tolua: unknown option '"..key.."'")
+                os.exit(1)
+            end
+        else
+            -- pkg
+            flags.f=v
+        end
+    end
+
+    -- define package name, if not provided
+    if not flags.n then
+        if flags.f then
+            flags.n = string.gsub(flags.f,"%..*$","")
+            _,_,flags.n = string.find(flags.n, "([^/\\]*)$")
+        else
+            error("#no package name nor input file provided")
+        end
+    end
+
+    -- parse table with extra paramters
+    parse_extra(_extra_parameters)
+
+    return flags, _extra_parameters
+end
+
+local flags, _extra_parameters=parsearg(arg)
+
+-- do this after setting the package name
+if flags.L then
+    dofile(flags.L)
+end
+
+-- parse
+local context=tolua.parse(flags.n, get_code(flags.f, _extra_parameters), flags)
+
+if flags.p then
+    -- only parse
+    return
+end
+
+if flags.P then
+    -- only print
+    context:print()
+    return
+end
+
+local generator=lua_bind.Generator(context)
+
+do
+    local ost=flags.o and assert(io.open(flags.o, "wb")) or io.stdout
+    ost:write(generator:source())
+    if flags.o then
+        ost:close()
+    end
+end
+
+if flags.H then
+    local ost=assert(io.open(flags.H, "wb"))
+    ost:write(generator:header())
+    ost:close()
+end
+
