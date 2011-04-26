@@ -11,7 +11,7 @@ function Generator:__init(context)
     -- add std::vector
     context:push(context.root)
     table.foreachi(context._global_types, function(i, v)
-        local container, typename=v:match("std::(%a+)(%b<>)")
+        local container, typename=v:match("std::(vector)(%b<>)")
         if container then
             typename=typename:sub(2, -2)
             context:push(context:get_or_create(tolua.classNamespace, "std"))
@@ -24,7 +24,7 @@ function Generator:__init(context)
                 tolua.Function(context, "unsigned int size", {}, "const")
                 tolua.Function(context, "void push_back", {"const "..typename.." &value"}, "")
                 tolua.Function(context, typename.."& operator", {"int index"}, "", "[]")
-                tolua.Function(context, typename.."& operator", {"int index"}, "", "&[]")
+                tolua.Function(context, typename.." operator", {"int index"}, "", "&[]")
                 table.insert(class, StlIterator(context, class.ctype))
 
                 -- build

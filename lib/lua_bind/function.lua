@@ -26,7 +26,7 @@ function Function:cfuncname(lname, overload)
         "tolua",
     }
     for i, v in ipairs(self.context) do
-        local name=v.name:gsub('[:<> ,]', '_')
+        local name=v.name:gsub('[:<> ,*]', '_')
         table.insert(elements, name)
     end
     table.insert(elements, 

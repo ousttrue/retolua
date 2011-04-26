@@ -27,7 +27,7 @@ function StlIterator:get_env()
     local env={
         class_type=self.class_type,
         iterator_type=self.iterator_type,
-        cname="tolua_"..self.context.name..'_'..self.class_type:gsub("[:<>, ]", "_").."_iterator",
+        cname="tolua_"..self.context.name..'_'..self.class_type:gsub("[:<>,* ]", "_").."_iterator",
         lname="foreachi",
         template_arg=self.template_arg,
     }

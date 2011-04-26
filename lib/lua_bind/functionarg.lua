@@ -90,7 +90,7 @@ function retvalue(arg, context)
     if lua_type and lua_type~='' then
         return '   tolua_push'..lua_type..'(tolua_S,('..ctype..')'..arg.name..');'
     else
-        return '   '..get_push_function(arg.ctype)..'(tolua_S,(void*)'..arg.name..',"'..arg.ctype..'");'
+        return '   tolua_pushusertype(tolua_S,(void*)'..arg.name..',"'..arg.ctype..'");'
     end
 end
 
