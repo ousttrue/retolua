@@ -6,12 +6,39 @@ function Generator:__init(context)
     self.context=context
     -- do return end
 
-    -- preprocess
-    table.walk(context.root, function(stack, node, temp)
-        if node:is(tolua.classClass) and node.ctype:find("^std::vector%b<>$") then
-            local iterator=StlIterator(node, stack, node.ctype)
-            table.insert(node, iterator)
+    -- preprocess global type
+
+    -- add std::vector
+    context:push(context.root)
+    table.foreachi(context._global_types, function(i, v)
+        local container, typename=v:match("std::(%a+)(%b<>)")
+        if container then
+            typename=typename:sub(2, -2)
+            context:push(context:get_or_create(tolua.classNamespace, "std"))
+            do
+                local class=context:create(tolua.classClass, 
+                "vector<"..typename..">", '')
+                context:push(class)
+
+                -- methods
+                tolua.Function(context, "unsigned int size", {}, "const")
+                tolua.Function(context, "void push_back", {"const "..typename.." &value"}, "")
+                tolua.Function(context, typename.."& operator", {"int index"}, "", "[]")
+                tolua.Function(context, typename.."& operator", {"int index"}, "", "&[]")
+                table.insert(class, StlIterator(context, class.ctype))
+
+                -- build
+                class:walk("build", context)
+
+                context:pop()
+            end
+            context:pop()
         end
+    end)
+    context:pop()
+
+    -- preprocess tree
+    table.walk(context.root, function(stack, node, temp)
     end, self.context)
 end
 
@@ -19,7 +46,7 @@ function Generator:get_binder(node, context)
     if node:is(StlIterator) then
         return node
     end
-
+    
     if node:is(tolua.classFunction) then
         -- function
         if context[#context]:is(tolua.classClass) then
@@ -152,11 +179,18 @@ TOLUA_API int tolua_<% context.name %>_open (lua_State* tolua_S)
  return 1;
 }
 
-
 #if defined(LUA_VERSION_NUM) && LUA_VERSION_NUM >= 501
+#ifdef __cplusplus
+extern "C" {
+#endif
+
  TOLUA_API int luaopen_<% context.name %> (lua_State* tolua_S) {
  return tolua_<% context.name %>_open(tolua_S);
 };
+
+#ifdef __cplusplus
+}
+#endif
 #endif
 
 ]=], env)

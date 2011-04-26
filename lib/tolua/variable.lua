@@ -120,6 +120,8 @@ function classVariable:build_enter(context)
         local ctype = self.ctype:gsub("%s*const%s+","")
         context:push_collection(context:findtype(ctype) or ctype)
     end
+
+    context:add_globaltype(self.ctype)
 end
 
 function classVariable:is_readonly()

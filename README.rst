@@ -11,7 +11,7 @@ tolua++と同じくMITライセンス
 ----------------
 - tolua++.exeに埋め込まずにluaスクリプトのまま運用する。ビルド無用(しかし、windowsだとcygwinとかmsys必要)
 - c++ヘッダのパースとコード生成を分離した
-- std::vector用のイテレータ生成(実験中)
+- std::vectorの自動関数生成(size, operator[], foreachi)
 
 捨てた/未確認の機能
 -------------------
@@ -21,6 +21,5 @@ tolua++と同じくMITライセンス
 
 予定
 ----
-- std::vectorのメソッドを一通り生成できるようにする
 - std::shared_ptrをなんとかしたい
 

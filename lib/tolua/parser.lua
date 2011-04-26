@@ -41,8 +41,8 @@ PATTERNS={
     matchers.class_matcher,
 
     Matcher("^typedef%s+(.-)%s*;", 
-    function(context, types)
-        context:typedef(types)
+    function(context, typedef)
+        context:typedef(typedef)
     end, 'Typedef'),
 
     matchers.variable_matcher,
@@ -120,6 +120,15 @@ function ParseContext:create(class, ...)
     return instance
 end
 
+function ParseContext:get_or_create(class, name, ...)
+    for i, v in ipairs(self[#self]) do
+        if v.name==name then
+            return v
+        end
+    end
+    return self:create(class, name, ...)
+end
+
 function ParseContext:append(child)
     assert(child:is(classFeature))
     table.insert(self[#self], child)
@@ -172,7 +181,8 @@ function ParseContext:overload(name)
 end
 
 function ParseContext:getnamespace()
-    local namespace=table.mapi(table.filteri(self, function(i, v)
+    local namespace=table.mapi(table.filteri(self, 
+    function(i, v)
         return v:is(classClass) or v:is(classNamespace)
     end),
     function(i,v)
@@ -270,7 +280,9 @@ function ParseContext:add_classtype(ctype)
 end
 
 function ParseContext:add_typedefs(k, v)
-    self:add_typedefs(k, v)
+    assert(v, 'no value')
+    self:add_globaltype(k)
+    self.global_typedefs[k] = v
 end
 
 function ParseContext:add_globaltype(ctype, class)
@@ -299,12 +311,6 @@ function ParseContext:add_usertype(ft)
         self._usertype[ft] = true
         table.insert(self._usertype, ft)
     end
-end
-
-function ParseContext:add_typedefs(k, v)
-    assert(v, 'no value')
-    self:add_globaltype(k)
-    self.global_typedefs[k] = v
 end
 
 function ParseContext:apply_typedef(mod, ctype)
@@ -394,6 +400,13 @@ function ParseContext:typedef(s)
     end
 end
 
+function ParseContext:warning (msg)
+    if self.flags.q then
+        return
+    end
+    io.stderr:write("\n** tolua warning: "..msg..".\n\n")
+end
+
 function parse(name, code, flags)
     local context=ParseContext(name, flags)
     context:parse(preprocess(code))
@@ -421,13 +434,6 @@ function tolua_error (s,f)
         print("\n** tolua internal error: "..f..s..".\n\n")
         return
     end
-end
-
-function warning (msg)
-    if flags.q then
-        return
-    end
-    io.stderr:write("\n** tolua warning: "..msg..".\n\n")
 end
 
 function clean_template(t)

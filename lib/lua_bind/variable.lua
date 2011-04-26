@@ -66,9 +66,9 @@ function Variable:getvalue(class, static, prop_get, suffix)
     if class and static then
         return class.ctype..'::'..(prop_get and prop_get.."()" or self.node.name)..suffix
     elseif class then
-        return 'self->'..(prop_get and prop_get.."()" or self.node.name)..suffix
+        return 'self->'..(prop_get and prop_get.."()" or self.node.namespace..self.node.name)..suffix
     else
-        return (prop_get and prop_get.."()" or self.node.name)..suffix
+        return (prop_get and prop_get.."()" or self.node.namespace..self.node.name)..suffix
     end
 end
 
@@ -218,7 +218,7 @@ end
 function Variable:register_enter()
     if #self.context==1 then
         if Variable._warning==nil then
-            warning("Mapping variable to global may degrade performance")
+            self.context:warning("Mapping variable to global may degrade performance")
             Variable._warning = 1
         end
     end
