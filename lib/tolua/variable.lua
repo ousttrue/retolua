@@ -114,14 +114,14 @@ function classVariable:build_enter(context)
     end
 
     if self.mod ~= 'const' and
-        self.dim and self.dim ~= '' and
-        not context:isbasic(self.ctype) and self.ptr == '' then
+        self.dim and self.dim ~= '' and self.ptr == '' then
         -- check if array of values are returned to Lua
         local ctype = self.ctype:gsub("%s*const%s+","")
         context:push_collection(context:findtype(ctype) or ctype)
     end
 
     context:add_globaltype(self.ctype)
+    context:add_usertype(self.ctype)
 end
 
 function classVariable:is_readonly()

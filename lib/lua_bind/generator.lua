@@ -2,6 +2,55 @@ module(..., package.seeall)
 
 Generator=tolua.define_class('Generator')
 
+function std_vector(context, v)
+    local container, typename=v:match("std::(vector)(%b<>)")
+    if not container then
+        return
+    end
+    typename=typename:sub(2, -2)
+    context:push(context:get_or_create(tolua.classNamespace, "std"))
+    do
+        local class=context:create(tolua.classClass, 
+        "vector<"..typename..">", '')
+        context:push(class)
+
+        -- methods
+        tolua.Function(context, "unsigned int size", {}, "const")
+        tolua.Function(context, "void push_back", {"const "..typename.." &value"}, "")
+        tolua.Function(context, typename.."& operator", {"int index"}, "", "[]")
+        tolua.Function(context, typename.." operator", {"int index"}, "", "&[]")
+        table.insert(class, StlIterator(context, class.ctype))
+
+        -- build
+        class:walk("build", context)
+
+        context:pop()
+    end
+    context:pop()
+end
+
+function std_shared_ptr(context, v)
+    local container, typename=v:match("std::(shared_ptr)(%b<>)")
+    if not container then
+        return
+    end
+    typename=typename:sub(2, -2)
+    context:push(context:get_or_create(tolua.classNamespace, "std"))
+    do
+        local class=context:create(tolua.classClass, 
+        "shared_ptr<"..typename..">", '')
+        context:push(class)
+
+        -- methods
+        tolua.Function(context, "long use_count", {}, "const")
+
+        -- build
+        class:walk("build", context)
+        context:pop()
+    end
+    context:pop()
+end
+
 function Generator:__init(context)
     self.context=context
     -- do return end
@@ -11,29 +60,10 @@ function Generator:__init(context)
     -- add std::vector
     context:push(context.root)
     table.foreachi(context._global_types, function(i, v)
-        local container, typename=v:match("std::(vector)(%b<>)")
-        if container then
-            typename=typename:sub(2, -2)
-            context:push(context:get_or_create(tolua.classNamespace, "std"))
-            do
-                local class=context:create(tolua.classClass, 
-                "vector<"..typename..">", '')
-                context:push(class)
-
-                -- methods
-                tolua.Function(context, "unsigned int size", {}, "const")
-                tolua.Function(context, "void push_back", {"const "..typename.." &value"}, "")
-                tolua.Function(context, typename.."& operator", {"int index"}, "", "[]")
-                tolua.Function(context, typename.." operator", {"int index"}, "", "&[]")
-                table.insert(class, StlIterator(context, class.ctype))
-
-                -- build
-                class:walk("build", context)
-
-                context:pop()
-            end
-            context:pop()
-        end
+        std_vector(context, v)
+    end)
+    table.foreachi(context._global_types, function(i, v)
+        std_shared_ptr(context, v)
     end)
     context:pop()
 

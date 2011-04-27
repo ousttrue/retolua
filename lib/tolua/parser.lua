@@ -285,8 +285,10 @@ function ParseContext:add_typedefs(k, v)
     self.global_typedefs[k] = v
 end
 
-function ParseContext:add_globaltype(ctype, class)
-    assert(not class)
+function ParseContext:add_globaltype(ctype)
+    if self:isbasic(ctype) then
+        return
+    end
     if not self._global_types[ctype] then
         self._global_types[ctype] = true
         table.insert(self._global_types, ctype)
@@ -306,10 +308,13 @@ function ParseContext:match_globaltype(ctype, namespace)
     end
 end
 
-function ParseContext:add_usertype(ft)
-    if not self._usertype[ft] then
-        self._usertype[ft] = true
-        table.insert(self._usertype, ft)
+function ParseContext:add_usertype(ctype)
+    if self:isbasic(ctype) then
+        return
+    end
+    if not self._usertype[ctype] then
+        self._usertype[ctype] = true
+        table.insert(self._usertype, ctype)
     end
 end
 
@@ -331,6 +336,9 @@ function ParseContext:add_enumvalue(ctype)
 end
 
 function ParseContext:push_collection(ctype)
+    if self:isbasic(ctype) then
+        return
+    end
     if not self._collect[ctype] then
         self._collect[ctype]=true
         table.insert(self._collect, ctype)

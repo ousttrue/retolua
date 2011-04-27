@@ -66,7 +66,7 @@ function Variable:getvalue(class, static, prop_get, suffix)
     if class and static then
         return class.ctype..'::'..(prop_get and prop_get.."()" or self.node.name)..suffix
     elseif class then
-        return 'self->'..(prop_get and prop_get.."()" or self.node.namespace..self.node.name)..suffix
+        return 'self->'..(prop_get and prop_get.."()" or self.node.name)..suffix
     else
         return (prop_get and prop_get.."()" or self.node.namespace..self.node.name)..suffix
     end

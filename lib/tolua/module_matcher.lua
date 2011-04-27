@@ -11,7 +11,7 @@ local function Class(context, n, p)
             p = nil 
         end
         if mbase then
-            mbase = context[#context]:resolve_template_types(mbase)
+            mbase = context:resolve_template_types(mbase)
         end
     end
 
