@@ -14,9 +14,12 @@ function std_vector(context, v)
         "vector<"..typename..">", '')
         context:push(class)
 
+        -- constructor`
+        tolua.Function(context, "vector", {}, "")
         -- methods
         tolua.Function(context, "unsigned int size", {}, "const")
         tolua.Function(context, "void push_back", {typename.." &value"}, "")
+        tolua.Function(context, typename.."& back", {}, "")
         tolua.Function(context, typename.."& operator", {"int index"}, "", "[]")
         tolua.Function(context, typename.." operator", {"int index"}, "", "&[]")
         table.insert(class, StlIterator(context, class.ctype))
