@@ -274,9 +274,12 @@ function ParseContext:findtype(ctype)
     -- to dofind in base class
 end
 
-function ParseContext:add_classtype(ctype)
-    self:add_globaltype(ctype)
-    self:add_usertype(ctype)
+function ParseContext:add_classtype(class)
+    if not self._global_classes[class.ctype] then
+        self._global_classes[class.ctype]=class
+    end
+    self:add_globaltype(class.ctype)
+    self:add_usertype(class.ctype)
 end
 
 function ParseContext:add_typedefs(k, v)

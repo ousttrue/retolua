@@ -108,7 +108,7 @@ function Declaration(context, declaration)
     end
 end
 
-local function Variable (context, declaration)
+function Variable (context, declaration)
     local d=Declaration(context, declaration)
     setmetatable(d, classVariable)
     return d

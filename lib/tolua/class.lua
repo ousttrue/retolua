@@ -10,10 +10,8 @@ function classClass:__init(context, name, base, extra_bases)
     self.base=base
 
     self.ctype = self.namespace..self.name
-    context:add_classtype(self.ctype)
 
     self.btype = context:findtype(self.base) or self.base
-
     if extra_bases then
         self.extra_bases=table.mapi(extra_bases, function(i, v)
             self.extra_bases[i] = context:findtype(v) or v

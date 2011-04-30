@@ -2,7 +2,7 @@ module(..., package.seeall)
 
 -- Constructor
 -- Expects the name, the base (array) and the body of the class.
-local function Class(context, n, p)
+function Class(context, n, p)
     local mbase
     if p then
         -- first base class
@@ -26,7 +26,9 @@ local function Class(context, n, p)
     end
 
     -- new class
-    return classClass(context, n, mbase or '', p)
+    local class= classClass(context, n, mbase or '', p)
+    context:add_classtype(class)
+    return class
 end
 
 matchers.class_matcher=Matcher(

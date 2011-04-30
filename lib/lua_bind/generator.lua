@@ -54,6 +54,32 @@ function std_shared_ptr(context, v)
     context:pop()
 end
 
+function std_pair(context, v)
+    local container, typename=v:match("std::(pair)(%b<>)")
+    if not container then
+        return
+    end
+    typename=typename:sub(2, -2)
+    typenames=typename:split_c_tokens(",")
+    assert(#typenames==2)
+    context:push(context:get_or_create(tolua.classNamespace, "std"))
+    local class_name="pair<"..typename..">"
+    local class=context:get_class("std::"..class_name)
+    if not class then
+        class=context:create(tolua.Class, class_name)
+        context:push(class)
+
+        -- methods
+        context:create(tolua.Variable, typenames[1].." first")
+        context:create(tolua.Variable, typenames[2].." second")
+
+        -- build
+        class:walk("build", context)
+        context:pop()
+    end
+    context:pop()
+end
+
 function Generator:__init(context)
     self.context=context
     -- do return end
@@ -62,12 +88,19 @@ function Generator:__init(context)
 
     -- add std::vector
     context:push(context.root)
-    table.foreachi(context._global_types, function(i, v)
-        std_vector(context, v)
-    end)
-    table.foreachi(context._global_types, function(i, v)
-        std_shared_ptr(context, v)
-    end)
+    do
+        table.foreachi(context._global_types, function(i, v)
+            std_vector(context, v)
+        end)
+
+        table.foreachi(context._global_types, function(i, v)
+            std_shared_ptr(context, v)
+        end)
+
+        table.foreachi(context._global_types, function(i, v)
+            std_pair(context, v)
+        end)
+    end
     context:pop()
 
     -- preprocess tree
